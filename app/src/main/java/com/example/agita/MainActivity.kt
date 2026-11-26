@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     override fun onSensorChanged(e: SensorEvent) {
         val g = sqrt(e.values[0] * e.values[0] + e.values[1] * e.values[1] + e.values[2] * e.values[2]) / SensorManager.GRAVITY_EARTH
         val now = SystemClock.elapsedRealtime()
-        if (g > 2.7f && now - lastShake > 2500) {
+        if (g > 2.7f && now - lastShake > 300) {
             lastShake = now
             web.evaluateJavascript("hit()", null)
         }
