@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agita el móvil</title>
+<style>
+:root{--bg:#14091f;--fg:#fff;--ac:#ff3b2f;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+img{position:absolute;width:100%;height:100%;object-fit:cover}
+#hit{opacity:0}
+.show #hit{opacity:1}
+.show #main{opacity:0}
+.shake{animation:sh .45s}
+@keyframes sh{0%,100%{transform:translate(0)}15%{transform:translate(-14px,8px) rotate(-1.2deg)}30%{transform:translate(12px,-8px) rotate(1deg)}50%{transform:translate(-9px,5px)}70%{transform:translate(6px,-3px)}}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none}
+.flash{animation:fl .3s}
+@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+#hint{position:fixed;left:0;right:0;bottom:24px;display:flex;justify-content:center;pointer-events:none}
+#hint span{background:rgba(20,9,31,.82);border:2px solid var(--ac);border-radius:999px;padding:12px 22px;font-weight:700;font-size:18px;animation:pu 1.4s infinite}
+@keyframes pu{50%{transform:scale(1.06)}}
+</style></head><body>
+<div id="stage"><img id="main" src="normal.jpg"><img id="hit" src="golpe.jpg"></div>
+<div id="flash"></div>
+<div id="hint"><span>📳 ¡Agita el móvil!</span></div>
+<script>
+const stage=document.getElementById('stage'),flash=document.getElementById('flash'),hint=document.getElementById('hint');
+let ac=null,busy=false;
+function ctx(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)()}catch(e){}return ac}
+function thump(){
+  const a=ctx();if(!a)return;if(a.state==='suspended')a.resume();
+  const t=a.currentTime;
+  const o=a.createOscillator(),g=a.createGain();
+  o.type='sine';o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(40,t+.25);
+  g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);
+  o.connect(g).connect(a.destination);o.start(t);o.stop(t+.4);
+  const n=a.createBuffer(1,a.sampleRate*.12,a.sampleRate),d=n.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
+  const s=a.createBufferSource(),f=a.createBiquadFilter(),g2=a.createGain();
+  s.buffer=n;f.type='lowpass';f.frequency.value=900;g2.gain.value=.9;
+  s.connect(f).connect(g2).connect(a.destination);s.start(t);
+}
+function hit(){
+  if(busy)return;busy=true;
+  thump();
+  if(navigator.vibrate)navigator.vibrate([60,40,90]);
+  stage.classList.add('show','shake');
+  flash.classList.remove('flash');void flash.offsetWidth;flash.classList.add('flash');
+  hint.style.visibility='hidden';
+  setTimeout(()=>stage.classList.remove('shake'),450);
+  setTimeout(()=>{stage.classList.remove('show');hint.style.visibility='visible';busy=false},2200);
+}
+stage.addEventListener('click',hit);
+</script></body></html>
